@@ -5,6 +5,8 @@ import client from "..";
 const router=express.Router();
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
+import authMiddleware from "../middleware/authMiddleware";
+import { Prisma } from "@repo/prisma/src";
 dotenv.config();
 
 export default router
@@ -83,18 +85,18 @@ router.post("signin",async(req:Request,res:Response)=>{
             })
             return
         }
-        const id=user.id
+        const userId=user.id
         const secretKey=process.env.SECRETKEY;
         if(!secretKey){
             throw new Error("Secret key is not defined")
         }
-        const token =jwt.sign({id},secretKey);
+        const token =jwt.sign({userId},secretKey);
         res.status(300).json({
             message:"user logged in successdully",
             token
         })
         return
-        
+
     }catch(err){
         if(err instanceof ZodError){
             console.log(err);
@@ -107,3 +109,82 @@ router.post("signin",async(req:Request,res:Response)=>{
         }
     }
 })
+
+//update MetaData --> avatar
+router.post("/user/metadata",authMiddleware, async(req:Request,res:Response)=>{
+    const userId=res.locals.userId
+    const {avatarId}=req.body
+    try{
+       const avatar= await client.avatar.findUnique({
+            where:{
+                id:avatarId
+            }
+        })
+        if(!avatar){
+             res.status(404).json({
+                message:"avatar not found"
+            })
+            return
+        }
+        
+
+        await client.user.update({
+            where:{
+                id:userId
+            },
+            data:{
+                avatarId:avatarId
+            }
+
+        })
+        res.status(200).json({
+            message:"Meta data added"
+        })
+        return
+
+    }catch(err){
+        res.status(400).json({
+            message:err
+        })
+        return
+    } 
+})
+
+//get all avatars
+router.get("/avatars",async (req:Request,res:Response)=>{
+    const avatars=await client.avatar.findMany({});
+    res.json({
+        avatars
+    })
+    return;
+})
+
+//bulk is left
+// router.get("/user/metadata/bulk?ids=[1,3,55]",authMiddleware,(req:Request,res:Response)=>{
+
+// })
+
+//get your metadata
+router.get("/metadata",authMiddleware, async(req:Request,res:Response)=>{
+    const userId=res.locals.userId
+    try{
+        const user=await client.user.findUnique({
+            where:{
+                id:userId
+            }
+        })
+
+        res.json({
+            metadata:user?.avatarId
+        })
+        return
+    }catch(err){
+        res.status(404).json({
+            message:err
+        })
+        return
+    }   
+})
+
+
+
