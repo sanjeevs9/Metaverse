@@ -20,14 +20,17 @@ model User {
   avatar Avatar?  @relation(fields: [avatarId],references: [id])
   avatarId String? 
   role     Role
+  spaces Space[]
 }
 
 model Space {
   id        String  @id @unique @default(cuid())
   name      String
   width     Int
-  height    Int?
+  height    Int
   thumbnail String?
+  creatorId String
+  creatorid User @relation(fields: [creatorId],references: [id])
   spaceElements spaceElements[]  //many space elements
 }
 
@@ -62,8 +65,8 @@ model mapElements {
   id        String  @id @unique @default(cuid())
   mapid Map @relation(fields: [mapId],references: [id])
   mapId     String
-  elementid Element? @relation(fields: [elementId],references: [id])
-  elementId String?
+  elementid Element @relation(fields: [elementId],references: [id])
+  elementId String
   x         Int?
   y         Int?
 }
