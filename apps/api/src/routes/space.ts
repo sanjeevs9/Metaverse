@@ -3,11 +3,12 @@ import authMiddleware from "../middleware/authMiddleware";
 import { CreateSpace } from "../middleware/Zodvalidation";
 import client from "..";
 import { ZodError } from "zod";
+import { addElement } from "../middleware/Zodvalidation";
 
 const router =express.Router()
 export default  router;
 
-//create a Space with a exisiting mapId
+//create a Space 
 router.post("/",authMiddleware, async (req:Request,res:Response)=>{
     const body=req.body
     const userId=res.locals.userId;
@@ -22,7 +23,7 @@ router.post("/",authMiddleware, async (req:Request,res:Response)=>{
         }
         x=parseInt(body.dimensions.split("x")[0]);
         y=parseInt(body.dimensions.split("x")[1]);
-        if(!body.spaceId){
+        if(!body.mapId){
             const space=await client.space.create({
                 data:{
                     name:body.name,
@@ -33,7 +34,8 @@ router.post("/",authMiddleware, async (req:Request,res:Response)=>{
             })
     
             res.json({
-                "spaceId":space.id
+                "spaceId":space.id,
+                "message":"new space"
             })
             return
         }
@@ -66,7 +68,7 @@ router.post("/",authMiddleware, async (req:Request,res:Response)=>{
                 })
                 
                 await client.spaceElements.createMany({
-                    data: map.elements.map((x)=>({
+                    data: map.elements.map((x:any)=>({
                             elementId:x.elementId,
                             spaceId:space.id,
                             x:x.x!,
@@ -89,6 +91,55 @@ router.post("/",authMiddleware, async (req:Request,res:Response)=>{
              res.status(400)
              return
         }
+    }
+})
+//add an element
+router.post("/element",authMiddleware,async(req:Request,res:Response)=>{
+    const body=req.body;
+    const userId=res.locals.userId;
+    
+    
+    try{
+        await addElement.parseAsync(body);
+
+        const space = await client.space.findUnique({
+            where: {
+                id: req.body.spaceId,
+                creatorId: userId
+            }, select: {
+                width: true,
+                height: true
+            }
+        })
+        if(req.body.x < 0 || req.body.y < 0 || req.body.x > space?.width! || req.body.y > space?.height!) {
+            res.status(400).json({message: "Point is outside of the boundary"})
+            return
+        }
+        if (!space) {
+            res.status(400).json({message: "Space not found"})
+            return
+        }
+
+        console.log(body.x,body.y);
+        
+
+
+        await client.spaceElements.create({
+            data:{
+                x:body.x,
+                y:body.y,
+                elementId:body.elementId,
+                spaceId:body.spaceId
+            }
+        })
+        res.json({
+            message:"element added"
+        })
+        return
+
+    }catch(err){
+        res.json({message:err})
+        return
     }
 })
 
@@ -133,5 +184,68 @@ router.get("/all",authMiddleware,async(req:Request,res:Response)=>{
         return
     }catch(err){
 
+    }
+})
+
+router.get("/:spaceId",authMiddleware,async (req:Request,res:Response)=>{
+    const {spaceId}=req.params
+    console.log(spaceId);
+    
+    try{
+        const space=await client.space.findUnique({
+            where:{
+                id:spaceId
+            },
+            include:{
+                spaceElements:{
+                    select:{
+                        id:true,
+                        x:true,
+                        y:true,
+                        elemendid:true
+                    }
+
+                }
+            }
+        })
+         res.json({
+            space
+        })
+        return 
+    }catch(err){
+            res.status(400).json({
+                message:err
+            })
+            return
+    }
+})
+
+
+
+
+//delete a element from space
+router.post("/element/:elementId",authMiddleware,async(req:Request,res:Response)=>{
+    const {elementId}=req.params
+    if(!elementId){
+        res.json({
+            message:"give id"
+        })
+        return
+    }
+    try{
+        await client.spaceElements.delete({
+            where:{
+                id:elementId
+            }
+        })
+        res.json({
+            message:"deleted"
+        })
+
+    }catch(err){
+        res.json({
+            err
+        })
+        return
     }
 })

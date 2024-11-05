@@ -1,12 +1,11 @@
 import express, {Response, Request } from "express"
 import { UserSignin, UserSignup } from "../middleware/Zodvalidation";
 import { ZodError } from "zod";
-import client from "..";
 const router=express.Router();
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
 import authMiddleware from "../middleware/authMiddleware";
-import { Prisma } from "@repo/prisma/src";
+import client from "@repo/prisma/client";
 dotenv.config();
 
 export default router
@@ -36,7 +35,6 @@ router.post("/signup",async (req:Request,res:Response)=>{
                 username:data.username,
                 password:data.password,
                 role:data.role,
-                avatar: data.avatar?data.avatar:""
             }
         })
         const secretKey = process.env.SECRETKEY;
@@ -55,11 +53,15 @@ router.post("/signup",async (req:Request,res:Response)=>{
     }catch(err){
         if(err  instanceof ZodError ){
             console.log(err);
-            res.status(404)
+            res.status(404).json({
+                err
+            })
             return
         }else{
             console.log(err);
-            res.status(404)
+            res.status(404).json({
+                err
+            })
             return
         }
     }
@@ -67,7 +69,7 @@ router.post("/signup",async (req:Request,res:Response)=>{
 
 
 //singin post
-router.post("signin",async(req:Request,res:Response)=>{
+router.post("/signin",async(req:Request,res:Response)=>{
     const body=req.body;
     try{
         await UserSignin.parseAsync(body)
@@ -100,11 +102,15 @@ router.post("signin",async(req:Request,res:Response)=>{
     }catch(err){
         if(err instanceof ZodError){
             console.log(err);
-            res.status(403)
+            res.status(403).json({
+                err
+            })
             return
         }else{
             console.log(err);
-            res.status(403);
+            res.status(403).json({
+                err
+            })
             return
         }
     }
@@ -159,10 +165,35 @@ router.get("/avatars",async (req:Request,res:Response)=>{
     return;
 })
 
-//bulk is left
-// router.get("/user/metadata/bulk?ids=[1,3,55]",authMiddleware,(req:Request,res:Response)=>{
-
-// })
+// bulk is left
+router.get("/user/metadata/bulk",authMiddleware,async (req:Request,res:Response)=>{
+    let userIdString:string = (req.query.ids ?? "") as string
+   
+    const usersIds=(userIdString).slice(1,userIdString.length-1).split(",");
+    
+    try{
+    const users=await client.user.findMany({
+        where:{
+            id:{in:usersIds}
+        },
+        include:{
+            avatar:{
+                select:{
+                    imageUrl:true
+                }
+            }
+        }
+    })
+    res.json({
+        users
+    })
+    return;
+}catch(err){
+    res.json(err)
+    return
+}
+    
+})
 
 //get your metadata
 router.get("/metadata",authMiddleware, async(req:Request,res:Response)=>{
@@ -187,4 +218,17 @@ router.get("/metadata",authMiddleware, async(req:Request,res:Response)=>{
 })
 
 
+//get all elements
+router.get("/elements",async(req:Request,res:Response)=>{
+    try{
+        const element=await client.element.findMany({})
+        res.json({element})
+        return
+    }catch(err){
+        res.json({
+            err
+        })
+        return 
+    }
+})
 

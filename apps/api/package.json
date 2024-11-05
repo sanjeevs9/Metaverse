@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --tsconfig=tsconfig.json",
+    "dev": "tsc && ./dist/index.js",
+    "start": "node ./dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -14,11 +17,12 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "cors": "^2.8.5",
+    "esbuild": "^0.24.0",
     "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@repo/prisma": "*",
     "@repo/typescript-config": "*"
   }
 }

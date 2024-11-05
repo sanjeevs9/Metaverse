@@ -30,6 +30,6 @@ export default async function authMiddleware(req:Request,res:Response,next:NextF
         })
         return
     }
-    res.locals.userid=decode.userId
+    res.locals.userId=decode.userId
     next()
 }

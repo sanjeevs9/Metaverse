@@ -49,6 +49,7 @@ model Element {
   width    Int
   height   Int
   imageUrl String
+  static Boolean
   spaceElements spaceElements[] //same element can be used  by multiple space element
   mapElements mapElements[]
 }
@@ -58,6 +59,7 @@ model Map {
   width  Int
   height Int
   name   String
+  thumbmail String
   elements mapElements[] //one map can have multiple mapElements
 }
 
