@@ -1,21 +1,18 @@
-const arr =  []
-
-const print = async () =>{
-    const response = await arr.shift()
-
-    if (response){
-      console.log(response)
-    }else{
-        console.log('waiting...')
-        await new Promise((r)=>{setTimeout(r,0)})
-        print()
-    }
-
-}
-
-arr.push(1)
-print()
-print()
-setTimeout(()=>{
-    arr.push(2)
-},0)
+const arr=[1,2,3,4];
+const values=Promise.all(
+    arr.map( (i)=>{
+         new Promise((resolve,reject)=>{
+            setTimeout(()=>{
+                resolve(console.log(i))
+            },1000);
+        })
+        
+        
+    })
+).then((res)=>{
+    console.log("inside");
+   
+    
+    
+})
+console.log("hiiii");

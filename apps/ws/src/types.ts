@@ -16,10 +16,31 @@ export type clientJoin={
     }
 }
 
-export type Room={
-    [id:string]:WebSocket[]
+
+export type Rooms={
+    [id:string]:Map<string,{webSocket:WebSocket,payload:{x:number,y:number}}>
 }
+//roomId:<"userid","websocket,payload:{x:,y:}">
+
 
 export interface CustomJwtPayload extends JwtPayload {
     userId: string;
+}
+
+export type Space_Joined={
+    "type":"space-joined",
+    "payload":{
+        "spawn":{
+            "x":number,
+            "y":number
+        },
+        "users":{
+            [userId:string]:{
+                "payload":{
+                    "x":number,
+                    "y":number
+                }
+            }
+        }[]
+    }
 }
